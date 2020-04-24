@@ -1,0 +1,50 @@
+import numpy as np
+import scipy as sp
+import variables, stage1, stage2, stage3, FCM, visualize
+
+print("Design domain = "+str(variables.nelx)+"x"+str(variables.nely)+\
+", problem = "+variables.case+", volfrac = "+str(variables.volfrac),flush=True)
+
+#%%
+""" Obtain topology optimized result using SIMP """
+print("Stage 1 - Topology optimization")
+# Stage 1- Topology Optimization (SIMP)
+dens = stage1.topopt()
+
+# Visualize stage 1
+visualize.stage1(dens)
+
+#%%
+""" Extract a geometry using an LSF """
+print("Stage 2 - Geometry extraction")
+
+# Stage 2 - Obtain initial geometry
+RBF = stage2.geomextr(dens)
+
+# Visualize stage 2
+visualize.stage2_3(RBF,5,2)
+
+#%%
+""" Optimize the shape of the geometry """
+print("Stage 3 - Shape optimization")
+# Create stiffness matrices (per integration point)
+Kinit,Vinit,ic = FCM.Kinit()
+
+# Stage 3 - Shape optimization
+steps = 1
+while steps<1.5:
+    
+    # Create quadtree integration band
+    print("- (re)create quadtree integration band")
+    iel,LSFip = FCM.quadtree_band(RBF,ic)
+    
+    # Shape optimization
+    RBF = stage3.shapeopt(RBF,Kinit,Vinit,iel,LSFip)
+    steps += 1
+    
+# Visualize stage 3
+visualize.stage2_3(RBF,5,3)
+
+#%%
+""" End """
+print("End")
